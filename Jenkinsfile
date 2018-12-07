@@ -10,13 +10,18 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building..'
+                when {
+                    expression { params.deploymentPlatform == 'Azure' }
+                }
+                steps {
+                    expression { params.deploymentPlatform = 'azurerm' }
+                }
                 withCredentials([azureServicePrincipal('azure_cr_ft_sp')]) {
                     sh '''
-                    rm -rf temp
                     mkdir temp
                     cd temp
                     git clone https://github.com/croffe/tf-templates
-                    cd tf-templates/azurerm/singleton-linux
+                    cd tf-templates/${deploymentPlatform}/${deploymentBlueprint}
                     wget -nv https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
                     unzip terraform_0.11.10_linux_amd64.zip
                     export ARM_CLIENT_ID=$AZURE_CLIENT_ID
@@ -24,7 +29,7 @@ pipeline {
                     export ARM_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID
                     export ARM_TENANT_ID=$AZURE_TENANT_ID
                     ./terraform init
-                    ./terraform apply -auto-approve -var "name_prefix=${machineName}"
+                    ./terraform apply -auto-approve -var "name_prefix=${deploymentName}" -var "size=${deploymentSize}" -var "region=${deploymentRegion}"
                     '''
                }
             }
@@ -33,6 +38,11 @@ pipeline {
             steps {
                 echo 'Reporting....'
             }
+        }
+    }
+    post {
+        always {
+            deleteDir()
         }
     }
 }
