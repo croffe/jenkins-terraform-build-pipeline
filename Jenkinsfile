@@ -10,9 +10,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building..'
+                when {
+                    expression { params.deploymentPlatform == 'Azure' }
+                }
+                steps {
+                    expression { params.deploymentPlatform = 'azurerm' }
+                }
                 withCredentials([azureServicePrincipal('azure_cr_ft_sp')]) {
                     sh '''
-                    rm -rf temp
                     mkdir temp
                     cd temp
                     git clone https://github.com/croffe/tf-templates
@@ -24,7 +29,7 @@ pipeline {
                     export ARM_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID
                     export ARM_TENANT_ID=$AZURE_TENANT_ID
                     ./terraform init
-                    ./terraform apply -auto-approve -var "name_prefix=${deploymentName}" -var "size=${deploymentSize}"
+                    ./terraform apply -auto-approve -var "name_prefix=${deploymentName}" -var "size=${deploymentSize}" -var "region=${deploymentRegion}"
                     '''
                }
             }
@@ -33,6 +38,11 @@ pipeline {
             steps {
                 echo 'Reporting....'
             }
+        }
+    }
+    post {
+        always {
+            deleteDir()
         }
     }
 }
