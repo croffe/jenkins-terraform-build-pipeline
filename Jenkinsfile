@@ -23,6 +23,7 @@ pipeline {
                     export ARM_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID
                     export ARM_TENANT_ID=$AZURE_TENANT_ID
                     ./terraform init
+                    ./terraform graph
                     ./terraform apply -auto-approve -var "name_prefix=${deploymentName}" -var "size=${deploymentSize}" -var "region=${deploymentRegion}"
                     '''
                }
