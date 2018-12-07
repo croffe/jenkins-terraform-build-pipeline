@@ -10,12 +10,6 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building..'
-                when {
-                    expression { params.deploymentPlatform == 'Azure' }
-                }
-                steps {
-                    expression { params.deploymentPlatform = 'azurerm' }
-                }
                 withCredentials([azureServicePrincipal('azure_cr_ft_sp')]) {
                     sh '''
                     mkdir temp
